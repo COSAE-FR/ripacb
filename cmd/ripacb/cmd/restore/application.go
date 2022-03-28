@@ -52,9 +52,7 @@ func NewApplication(configuration cliconfig.Configuration, skipConfig bool) *App
 				Reboot()
 			}()
 		}
-		app.Application.QueueUpdateDraw(func() {
-			app.Application.Stop()
-		})
+		app.Application.Stop()
 	})
 	app.Pages.AddPage(constants.Reboot, reboot, false, false)
 
