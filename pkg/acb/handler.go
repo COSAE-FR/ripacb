@@ -2,9 +2,9 @@ package acb
 
 import (
 	"errors"
-	"fmt"
 	"github.com/COSAE-FR/ripacb/pkg/acb/bindings"
 	"github.com/COSAE-FR/ripacb/pkg/acb/entity"
+	"github.com/COSAE-FR/ripacb/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"io"
@@ -42,7 +42,6 @@ func (s *Server) ListBackupsHandler(c *gin.Context) {
 	if request.Revision != "" {
 		revision, found := revisions[request.Revision]
 		if !found {
-			fmt.Printf("%+v \n%+v\nn", revisions, request)
 			c.AbortWithStatusJSON(http.StatusNotFound, &bindings.StatusResponse{
 				Code:    http.StatusNotFound,
 				Message: "No revision",
@@ -69,6 +68,7 @@ func (s *Server) Ping(c *gin.Context) {
 	c.AbortWithStatusJSON(http.StatusOK, &bindings.StatusResponse{
 		Code:     http.StatusOK,
 		Message:  "Server OK",
+		Version:  utils.Version,
 		Features: &s.config.Features,
 	})
 }
@@ -162,5 +162,54 @@ func (s *Server) SaveBackupHandler(c *gin.Context) {
 	c.AbortWithStatusJSON(http.StatusCreated, &bindings.StatusResponse{
 		Code:    http.StatusCreated,
 		Message: "Backup created",
+	})
+}
+
+func (s *Server) DeleteBackupHandler(c *gin.Context) {
+	if !s.config.Features.AllowDelete {
+		s.log.Info("delete disabled")
+		c.AbortWithStatusJSON(http.StatusCreated, &bindings.StatusResponse{
+			Code:    http.StatusForbidden,
+			Message: "Backup not deleted",
+		})
+		return
+	}
+	request := &bindings.GetBackupRequest{}
+	err := c.Bind(request)
+	if err != nil {
+		s.log.Errorf("cannot parse save request: %s", err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, &bindings.StatusResponse{
+			Code:    http.StatusInternalServerError,
+			Message: "Invalid request",
+		})
+		return
+	}
+	if request.Revision != "" {
+		if err := s.store.DeleteRevision(request.DeviceKey, request.Revision, s.config.Features); err != nil {
+			if errors.Is(err, ErrMaskedToClient) {
+				s.log.Errorf("cannot delete revision: %s, not reporting to client", err)
+				c.AbortWithStatusJSON(http.StatusNotFound, &bindings.StatusResponse{
+					Code:    http.StatusNotFound,
+					Message: "No revision",
+				})
+				return
+			}
+			s.log.Errorf("cannot delete revision: %s", err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, &bindings.StatusResponse{
+				Code:    http.StatusInternalServerError,
+				Message: "Cannot delete revision",
+			})
+			return
+		}
+		c.AbortWithStatusJSON(http.StatusAccepted, &bindings.StatusResponse{
+			Code:    http.StatusAccepted,
+			Message: "Backup deleted",
+		})
+		return
+	}
+	s.log.Errorf("No revision in request")
+	c.AbortWithStatusJSON(http.StatusNotFound, &bindings.StatusResponse{
+		Code:    http.StatusNotFound,
+		Message: "No revision",
 	})
 }

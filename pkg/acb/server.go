@@ -57,9 +57,11 @@ func NewServer(log *logrus.Entry, store Store, config *config2.Config) (*Server,
 	router.POST("/list", srv.ListBackupsHandler)
 	router.GET("/getbkp", srv.Ping)
 	router.POST("/save", srv.SaveBackupHandler)
+	router.POST("/rmbkp", srv.DeleteBackupHandler)
 	router.POST("/api/v1/backups", srv.ListBackupsHandler)
 	router.GET("/api/v1/status", srv.Ping)
 	router.POST("/api/v1/backups/new", srv.SaveBackupHandler)
+	router.POST("/api/v1/backups/delete", srv.DeleteBackupHandler)
 
 	return srv, nil
 }

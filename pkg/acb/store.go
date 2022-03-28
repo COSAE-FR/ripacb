@@ -19,12 +19,15 @@ import (
 var (
 	ErrMaskedToClient    = errors.New("")
 	ErrSaveDisabled      = fmt.Errorf("%wsave disabled", ErrMaskedToClient)
+	ErrDeleteDisabled    = fmt.Errorf("%wdelete disabled", ErrMaskedToClient)
+	ErrDeleteForbidden   = fmt.Errorf("%wdelete forbidden", ErrMaskedToClient)
 	ErrNewDeviceDisabled = fmt.Errorf("%wnew devices disabled", ErrMaskedToClient)
 )
 
 type Store interface {
 	GetRevisionsForDevice(device string, features config.Features) (entity.RevisionList, error)
 	GetRevision(device string, revisionId string, features config.Features) (*entity.Revision, error)
+	DeleteRevision(device string, revisionId string, features config.Features) error
 	SetRevision(revision *entity.Revision, features config.Features) error
 }
 
@@ -122,11 +125,11 @@ func (d *DirectoryStore) SetRevision(revision *entity.Revision, features config.
 	if err != nil {
 		return err
 	}
-	for len(existing) >= features.MaxBackups {
-		if err := os.Remove(existing[len(existing)-1]); err != nil {
+	for len(existing) >= features.MaxBackups && features.MaxBackups > 0 {
+		if err := os.Remove(existing[0]); err != nil {
 			return err
 		}
-		existing = existing[:len(existing)-1]
+		existing = existing[1:]
 	}
 	content, err := json.Marshal(revision)
 	if err != nil {
@@ -135,6 +138,30 @@ func (d *DirectoryStore) SetRevision(revision *entity.Revision, features config.
 	backupPath := filepath.Join(devicePath, fmt.Sprintf("%s.json", revision.Revision))
 	if err := ioutil.WriteFile(backupPath, content, 0640); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (d *DirectoryStore) DeleteRevision(device string, revisionId string, features config.Features) error {
+	if !features.AllowDelete {
+		return ErrDeleteDisabled
+	}
+	list, err := d.GetRevisionsForDevice(device, features)
+	if err != nil {
+		return err
+	}
+	rev, found := list[revisionId]
+	if !found {
+		return fmt.Errorf("unknown revision")
+	}
+	if rev.FromPortal && !features.IsPortal {
+		return ErrDeleteForbidden
+	}
+	devicePath := filepath.Join(d.path, rev.Device)
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	if common.FileExists(devicePath) {
+		return os.Remove(devicePath)
 	}
 	return nil
 }

@@ -11,6 +11,8 @@ type Features struct {
 	AllowSave bool `yaml:"allow_save" json:"allow_save"`
 	// Allow saving new configuration revision for new devices
 	AllowNew bool `yaml:"allow_new" json:"allow_new"`
+	// Allow deleting revision
+	AllowDelete bool `yaml:"allow_delete" json:"allow_delete"`
 	// Allow restoring user saved revisions
 	AllowRestoreUser bool `yaml:"allow_restore_user" json:"allow_restore_user"`
 	// Maximum revision count to keep

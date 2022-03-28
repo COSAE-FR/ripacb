@@ -21,6 +21,7 @@ type GetBackupRequest struct {
 type StatusResponse struct {
 	Code     int              `json:"code"`
 	Message  string           `json:"message"`
+	Version  string           `json:"version"`
 	Features *config.Features `json:"features,omitempty"`
 }
 
