@@ -2,6 +2,9 @@ package restore
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/xml"
 	"fmt"
 	"github.com/COSAE-FR/ripacb/cmd/ripacb/cmd/cliconfig"
@@ -9,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/rivo/tview"
 	"io"
+	"strings"
 )
 
 func errorModal(pages *tview.Pages, nextPage string, text string, args ...interface{}) {
@@ -65,4 +69,11 @@ func patchXml(original []byte) ([]byte, error) {
 		return original, err
 	}
 	return outBuf.Bytes(), nil
+}
+
+func deviceKey(hostname, password string) string {
+	h := hmac.New(sha256.New, []byte(password))
+	h.Write([]byte(strings.TrimSpace(strings.ToLower(hostname))))
+	dk := h.Sum(nil)
+	return hex.EncodeToString(dk)
 }

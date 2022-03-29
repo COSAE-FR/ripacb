@@ -2,9 +2,6 @@ package restore
 
 import (
 	"bytes"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/COSAE-FR/ripacb/cmd/ripacb/cmd/cliconfig"
@@ -53,12 +50,9 @@ func NewBackups(app *Application) *Backups {
 }
 
 func GetBackups(server, hostname, password string) (*entity.RevisionList, error) {
-	h := hmac.New(sha256.New, []byte(password))
-	h.Write([]byte(hostname))
-	dk := h.Sum(nil)
 	req := bindings.GetBackupRequest{
 		Version:   "22.2",
-		DeviceKey: hex.EncodeToString(dk),
+		DeviceKey: deviceKey(hostname, password),
 	}
 	body, err := json.Marshal(&req)
 	if err != nil {

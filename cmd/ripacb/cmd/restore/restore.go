@@ -2,7 +2,6 @@ package restore
 
 import (
 	"bytes"
-	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -26,13 +25,11 @@ func restoreBackup(id string, progress chan int) error {
 	}
 	id = rev.UTC().Format(time.RFC3339)
 	progress <- 1
-	h := hmac.New(sha256.New, []byte(cliconfig.Config.Password))
-	h.Write([]byte(cliconfig.Config.Hostname))
+	dk := deviceKey(cliconfig.Config.Hostname, cliconfig.Config.Password)
 	progress <- 1
-	dk := h.Sum(nil)
 	req := bindings.GetBackupRequest{
 		Version:   "22.2",
-		DeviceKey: hex.EncodeToString(dk),
+		DeviceKey: dk,
 		Revision:  id,
 	}
 	progress <- 1
