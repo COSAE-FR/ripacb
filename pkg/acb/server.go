@@ -36,7 +36,7 @@ func NewServer(log *logrus.Entry, store Store, config *config2.Config) (*Server,
 		return nil, err
 	}
 	router := gin.New()
-	_ = router.SetTrustedProxies(nil)
+	_ = router.SetTrustedProxies(config.TrustedProxies)
 	srv := &Server{
 		server: &http.Server{
 			Handler:   router,

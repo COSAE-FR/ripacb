@@ -27,6 +27,7 @@ type Config struct {
 	RequestsPerMinute int64              `yaml:"rate" default:"60"`
 	Features          Features           `yaml:"features"`
 	TLS               *tls.Configuration `yaml:"tls,omitempty"`
+	TrustedProxies    []string           `yaml:"trusted_proxies,omitempty" validate:"dive,ipv4|cidrv4"`
 }
 
 func (c *Config) Check() error {
