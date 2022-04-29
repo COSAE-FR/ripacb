@@ -7,10 +7,12 @@ import (
 	"github.com/go-playground/validator/v10"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"time"
 )
 
 const DefaultPfSenseXML = "/conf/config.xml"
+const PfSenseGlobalsFile = "/etc/inc/globals.inc"
 
 var PfSenseXML = DefaultPfSenseXML
 
@@ -46,6 +48,18 @@ func getDefaultServerURL() string {
 	if pfConfiguration != nil {
 		if pfConfiguration.System.ACB.Server != "" {
 			return pfConfiguration.System.ACB.Server
+		}
+	}
+	if common.FileExists(PfSenseGlobalsFile) {
+		globals, err := ioutil.ReadFile(PfSenseGlobalsFile)
+		if err == nil {
+			r, err := regexp.Compile(`"default_acb_server"\s*=>\s*"(http[^"]+)"`)
+			if err == nil {
+				match := r.FindStringSubmatch(string(globals))
+				if len(match) == 2 {
+					return match[1]
+				}
+			}
 		}
 	}
 	return defaultServer
