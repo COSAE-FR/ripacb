@@ -31,21 +31,25 @@ func (s *Server) ListBackupsHandler(c *gin.Context) {
 		})
 		return
 	}
+	logger := s.log.WithField("device", request.DeviceKey)
 	revisions, err := s.store.GetRevisionsForDevice(request.DeviceKey, s.config.Features)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, &bindings.StatusResponse{
 			Code:    http.StatusNotFound,
 			Message: "No revision",
 		})
+		logger.Tracef("No revision: %s", err)
 		return
 	}
 	if request.Revision != "" {
+		logger = logger.WithField("requested_revision", request.Revision)
 		revision, found := revisions[request.Revision]
 		if !found {
 			c.AbortWithStatusJSON(http.StatusNotFound, &bindings.StatusResponse{
 				Code:    http.StatusNotFound,
 				Message: "No revision",
 			})
+			logger.Tracef("Unknown revision")
 			return
 		}
 		if c.Request.URL.Path == "/api/v1/backups" {
