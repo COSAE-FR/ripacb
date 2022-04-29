@@ -12,5 +12,5 @@ func Reboot() {
 	if err := exec.Command("/etc/rc.stop_packages").Run(); err != nil {
 		log.Printf("Cannot stop packages: %s", err)
 	}
-	exec.Command("/etc/rc.reboot").Run()
+	exec.Command("/etc/rc.reboot", "-r").Run()
 }
