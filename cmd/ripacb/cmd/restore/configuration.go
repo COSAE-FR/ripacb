@@ -16,7 +16,7 @@ func NewConfiguration(app *Application) *Configuration {
 	cnf.Form = tview.NewForm().
 		AddInputField(constants.Server, cliconfig.Config.ServerURL, 35, nil, nil).
 		AddInputField(constants.Hostname, cliconfig.Config.Hostname, 35, nil, nil).
-		AddPasswordField(constants.Password, cliconfig.Config.Password, 35, '*', nil).
+		AddInputField(constants.Password, cliconfig.Config.Password, 35, nil, nil).
 		AddButton(constants.ListBackups, func() {
 			cliconfig.Config.ServerURL = cnf.Form.GetFormItemByLabel(constants.Server).(*tview.InputField).GetText()
 			cliconfig.Config.Hostname = cnf.Form.GetFormItemByLabel(constants.Hostname).(*tview.InputField).GetText()
