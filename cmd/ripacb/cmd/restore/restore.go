@@ -9,9 +9,11 @@ import (
 	"github.com/COSAE-FR/ripacb/cmd/ripacb/cmd/cliconfig"
 	"github.com/COSAE-FR/ripacb/pkg/acb/bindings"
 	"github.com/COSAE-FR/ripacb/pkg/acb/entity"
+	"github.com/COSAE-FR/riputils/common"
 	"github.com/Luzifer/go-openssl/v4"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -93,7 +95,12 @@ func restoreBackup(id string, progress chan int) error {
 		_ = ioutil.WriteFile(cliconfig.PfSenseXML, input, 0644)
 		return err
 	}
+	if common.FileExists("/conf/trigger_initial_wizard") {
+		_ = os.Remove("/conf/trigger_initial_wizard")
+	}
+
 	return nil
+
 }
 
 func prepareEncryptedText(original string) []byte {
