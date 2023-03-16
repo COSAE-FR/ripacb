@@ -1,14 +1,14 @@
-package acb
+package store
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"github.com/COSAE-FR/ripacb/pkg/acb"
 	"github.com/COSAE-FR/ripacb/pkg/acb/config"
 	"github.com/COSAE-FR/ripacb/pkg/acb/entity"
 	"github.com/COSAE-FR/riputils/common"
 	"github.com/go-playground/validator/v10"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"io/fs"
 	"io/ioutil"
 	"os"
@@ -16,25 +16,10 @@ import (
 	"sync"
 )
 
-var (
-	ErrMaskedToClient    = errors.New("")
-	ErrSaveDisabled      = fmt.Errorf("%wsave disabled", ErrMaskedToClient)
-	ErrDeleteDisabled    = fmt.Errorf("%wdelete disabled", ErrMaskedToClient)
-	ErrDeleteForbidden   = fmt.Errorf("%wdelete forbidden", ErrMaskedToClient)
-	ErrNewDeviceDisabled = fmt.Errorf("%wnew devices disabled", ErrMaskedToClient)
-)
-
-type Store interface {
-	GetRevisionsForDevice(device string, features config.Features) (entity.RevisionList, error)
-	GetRevision(device string, revisionId string, features config.Features) (*entity.Revision, error)
-	DeleteRevision(device string, revisionId string, features config.Features) error
-	SetRevision(revision *entity.Revision, features config.Features) error
-}
-
-const DirectoryStoreType StoreType = "directory"
+const DirectoryStoreType acb.StoreType = "directory"
 
 type DirectoryStore struct {
-	log  *log.Entry
+	log  *logrus.Entry
 	path string
 	lock sync.RWMutex
 }
@@ -166,7 +151,7 @@ func (d *DirectoryStore) DeleteRevision(device string, revisionId string, featur
 	return nil
 }
 
-func NewDirectoryStore(path string, logger *log.Entry) (*DirectoryStore, error) {
+func NewDirectoryStore(path string, logger *logrus.Entry) (*DirectoryStore, error) {
 	logger = logger.WithFields(map[string]interface{}{
 		"component":  "directory_store",
 		"store_path": path,
