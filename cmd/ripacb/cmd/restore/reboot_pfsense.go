@@ -9,12 +9,12 @@ import (
 )
 
 func Reboot() {
+	log.Printf("Stopping packages...")
 	if err := exec.Command("/etc/rc.stop_packages").Run(); err != nil {
 		log.Printf("Cannot stop packages: %s", err)
 	}
-	cmd := exec.Command("/etc/rc.reboot", "-r")
-	if err := cmd.Start(); err != nil {
-		cmd.Process.Release()
+	log.Printf("Launching rc.reboot...")
+	if err := exec.Command("/etc/rc.reboot").Run(); err != nil {
+		log.Printf("Cannot run rc.reboot: %s", err)
 	}
-
 }

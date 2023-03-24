@@ -1,7 +1,6 @@
 package restore
 
 import (
-	"fmt"
 	"github.com/COSAE-FR/ripacb/cmd/ripacb/cmd/cliconfig"
 	"github.com/COSAE-FR/ripacb/cmd/ripacb/cmd/constants"
 	"github.com/rivo/tview"
@@ -47,10 +46,7 @@ func NewApplication(configuration cliconfig.Configuration, skipConfig bool) *App
 	reboot.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		switch buttonLabel {
 		case constants.Reboot:
-			fmt.Println("Rebooting, please wait...")
-			go func() {
-				Reboot()
-			}()
+			cliconfig.RebootOnExit = true
 		}
 		app.Application.Stop()
 	})

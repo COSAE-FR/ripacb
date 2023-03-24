@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/COSAE-FR/ripacb/cmd/ripacb/cmd/cliconfig"
 	"github.com/COSAE-FR/ripacb/cmd/ripacb/cmd/restore"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +24,11 @@ This client do not use the default pfSense API.`,
 		}
 		rApp := restore.NewApplication(cliconfig.Config, skip)
 		if err := rApp.Start(); err != nil {
-			panic(err)
+			log.Fatalf("Error when main application: %s", err)
+		}
+		if cliconfig.RebootOnExit {
+			log.Println("Rebooting, please wait...")
+			restore.Reboot()
 		}
 	},
 }

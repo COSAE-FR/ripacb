@@ -113,3 +113,4 @@ func init() {
 }
 
 var SkipConfig = false
+var RebootOnExit = false
