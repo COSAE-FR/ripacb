@@ -3,18 +3,48 @@ package acb
 import (
 	"fmt"
 	"github.com/COSAE-FR/ripacb/pkg/acb/config"
+	"github.com/COSAE-FR/ripacb/pkg/acb/store"
 	"github.com/COSAE-FR/ripacb/pkg/utils"
 	"github.com/COSAE-FR/riputils/common/logging"
+	"github.com/COSAE-FR/riputils/db"
 	"github.com/creasty/defaults"
 	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
 )
 
-type StoreType string
+type StoreConfig struct {
+	Type     store.Type        `yaml:"type" validate:"required" default:"directory"`
+	Path     string            `yaml:"path" validate:"required_if=Type directory"`
+	Database *db.Configuration `yaml:"db"`
+}
+
+func (c *StoreConfig) Check() error {
+	if err := defaults.Set(c); err != nil {
+		return err
+	}
+	validate := validator.New()
+	if err := validate.Struct(c); err != nil {
+		return err
+	}
+	if c.Type == store.DBStoreType {
+		return c.Database.Check()
+	}
+	return nil
+}
+
+func (c *StoreConfig) GetStore(logger *log.Entry) (store.Store, error) {
+	switch c.Type {
+	case store.DirectoryStoreType:
+		return store.NewDirectoryStore(c.Path, logger)
+	case store.DBStoreType:
+		return store.NewDBStore(c.Database, logger)
+	default:
+		return nil, fmt.Errorf("unknown store type")
+	}
+}
 
 type ServiceConfig struct {
-	Store           StoreType       `yaml:"store" validate:"required" default:"directory"`
-	Path            string          `yaml:"path" validate:"required"`
+	Store           StoreConfig     `yaml:"store" validate:"required"`
 	Servers         []config.Config `yaml:"servers"`
 	*logging.Config `yaml:"logging"`
 }
@@ -32,11 +62,11 @@ func (c *ServiceConfig) Check() error {
 			return err
 		}
 	}
-	return nil
+	return c.Store.Check()
 }
 
 type Service struct {
-	store   Store
+	store   store.Store
 	log     *log.Entry
 	config  *ServiceConfig
 	servers []*Server
@@ -53,19 +83,12 @@ func NewService(entry *log.Entry, config *ServiceConfig) (*Service, error) {
 	if err := config.Check(); err != nil {
 		return nil, err
 	}
-	var store Store
-	var err error
-	switch config.Store {
-	case DirectoryStoreType:
-		store, err = NewDirectoryStore(config.Path, entry)
-		if err != nil {
-			return nil, err
-		}
-	default:
-		return nil, fmt.Errorf("unknown store type")
+	serviceStore, err := config.Store.GetStore(entry.WithField("component", "store"))
+	if err != nil {
+		return nil, err
 	}
 	return &Service{
-		store:   store,
+		store:   serviceStore,
 		log:     entry.WithField("component", "acb_service"),
 		config:  config,
 		servers: nil,

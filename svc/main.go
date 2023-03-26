@@ -4,12 +4,13 @@ import (
 	"github.com/COSAE-FR/ripacb/pkg/acb"
 	"github.com/COSAE-FR/ripacb/pkg/utils"
 	"github.com/COSAE-FR/riputils/svc"
+	"github.com/COSAE-FR/riputils/svc/shared"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 )
 
-func ConfigParser(logger *log.Entry, config svc.Config) (svc.Daemonizer, error) {
+func ConfigParser(logger *log.Entry, config shared.Config) (svc.Daemonizer, error) {
 	log.SetLevel(log.InfoLevel)
 	cfg := &acb.ServiceConfig{}
 	file, err := ioutil.ReadFile(config.Conf)

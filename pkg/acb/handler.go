@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/COSAE-FR/ripacb/pkg/acb/bindings"
 	"github.com/COSAE-FR/ripacb/pkg/acb/entity"
+	"github.com/COSAE-FR/ripacb/pkg/acb/store"
 	"github.com/COSAE-FR/ripacb/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -148,7 +149,7 @@ func (s *Server) SaveBackupHandler(c *gin.Context) {
 		return
 	}
 	if err := s.store.SetRevision(backup, s.config.Features); err != nil {
-		if errors.Is(err, ErrMaskedToClient) {
+		if errors.Is(err, store.ErrMaskedToClient) {
 			s.log.Errorf("cannot save revision: %s, not reporting to client", err)
 			c.AbortWithStatusJSON(http.StatusCreated, &bindings.StatusResponse{
 				Code:    http.StatusCreated,
@@ -190,7 +191,7 @@ func (s *Server) DeleteBackupHandler(c *gin.Context) {
 	}
 	if request.Revision != "" {
 		if err := s.store.DeleteRevision(request.DeviceKey, request.Revision, s.config.Features); err != nil {
-			if errors.Is(err, ErrMaskedToClient) {
+			if errors.Is(err, store.ErrMaskedToClient) {
 				s.log.Errorf("cannot delete revision: %s, not reporting to client", err)
 				c.AbortWithStatusJSON(http.StatusNotFound, &bindings.StatusResponse{
 					Code:    http.StatusNotFound,

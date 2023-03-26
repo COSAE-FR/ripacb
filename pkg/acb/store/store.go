@@ -22,3 +22,4 @@ type Store interface {
 	SetRevision(revision *entity.Revision, features config.Features) error
 }
 
+type Type string

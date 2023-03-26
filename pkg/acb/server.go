@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	config2 "github.com/COSAE-FR/ripacb/pkg/acb/config"
+	"github.com/COSAE-FR/ripacb/pkg/acb/store"
 	"github.com/COSAE-FR/riputils/gin/ginlog"
 	"github.com/COSAE-FR/riputils/gin/rate"
 	"github.com/gin-gonic/gin"
@@ -23,11 +24,11 @@ type Server struct {
 	server   *http.Server
 	listener net.Listener
 	started  bool
-	store    Store
+	store    store.Store
 	useTLS   bool
 }
 
-func NewServer(log *logrus.Entry, store Store, config *config2.Config) (*Server, error) {
+func NewServer(log *logrus.Entry, store store.Store, config *config2.Config) (*Server, error) {
 	if store == nil {
 		return nil, fmt.Errorf("store is mandatory")
 	}

@@ -3,7 +3,6 @@ package store
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/COSAE-FR/ripacb/pkg/acb"
 	"github.com/COSAE-FR/ripacb/pkg/acb/config"
 	"github.com/COSAE-FR/ripacb/pkg/acb/entity"
 	"github.com/COSAE-FR/riputils/common"
@@ -16,7 +15,7 @@ import (
 	"sync"
 )
 
-const DirectoryStoreType acb.StoreType = "directory"
+const DirectoryStoreType Type = "directory"
 
 type DirectoryStore struct {
 	log  *logrus.Entry

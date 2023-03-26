@@ -3,7 +3,6 @@ package store
 import (
 	"errors"
 	"fmt"
-	"github.com/COSAE-FR/ripacb/pkg/acb"
 	"github.com/COSAE-FR/ripacb/pkg/acb/config"
 	"github.com/COSAE-FR/ripacb/pkg/acb/entity"
 	"github.com/COSAE-FR/riputils/db"
@@ -14,7 +13,7 @@ import (
 	"time"
 )
 
-const DBStoreType acb.StoreType = "database"
+const DBStoreType Type = "database"
 
 type DBRevision struct {
 	Revision   string `gorm:"primaryKey;autoIncrement:false"`
@@ -53,15 +52,15 @@ type DBStore struct {
 
 func (D DBStore) GetRevisionsForDevice(device string, features config.Features) (entity.RevisionList, error) {
 	var dbRevisions []DBRevision
-	db := D.db
+	tx := D.db.Order("date desc")
 	if !features.AllowRestoreUser {
-		db = db.Where("from_portal = ?", true)
+		tx = tx.Where("from_portal = ?", true)
 	}
-	db = db.Find(&dbRevisions, "device = ?", device)
-	if db.Error != nil {
-		return nil, db.Error
+	tx = tx.Find(&dbRevisions, "device = ?", device)
+	if tx.Error != nil {
+		return nil, tx.Error
 	}
-	var list entity.RevisionList
+	list := make(entity.RevisionList, len(dbRevisions))
 	for _, r := range dbRevisions {
 		list[r.Revision] = *r.ToRevision()
 	}
@@ -70,20 +69,27 @@ func (D DBStore) GetRevisionsForDevice(device string, features config.Features) 
 
 func (D DBStore) GetRevision(device string, revisionId string, features config.Features) (*entity.Revision, error) {
 	var dbRevision DBRevision
-	db := D.db
+	database := D.db.Order("date desc")
 	if !features.AllowRestoreUser {
-		db = db.Where("from_portal = ?", true)
+		database = database.Where("from_portal = ?", true)
 	}
-	err := db.First(&dbRevision, "revision = ? and device = ?", revisionId, device).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("unknown revision")
+	err := database.First(&dbRevision, "revision = ? and device = ?", revisionId, device).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("unknown revision")
+		}
+		return nil, err
 	}
 	return dbRevision.ToRevision(), nil
 }
 
 func (D DBStore) DeleteRevision(device string, revisionId string, features config.Features) error {
-	// TODO: Implement
-	return nil
+	if !features.AllowDelete {
+		return ErrDeleteDisabled
+	}
+	return D.db.Transaction(func(tx *gorm.DB) error {
+		return tx.Delete(&DBRevision{}, "revision = ? and device = ?", revisionId, device).Error
+	})
 }
 
 func (D DBStore) SetRevision(revision *entity.Revision, features config.Features) error {
@@ -93,41 +99,52 @@ func (D DBStore) SetRevision(revision *entity.Revision, features config.Features
 	if revision == nil {
 		return fmt.Errorf("empty revision")
 	}
+	logger := D.log.WithFields(logrus.Fields{"method": "set_revision", "revision": revision.Revision})
 	validate := validator.New()
 	if err := validate.Struct(revision); err != nil {
 		return err
 	}
 	revision.FromPortal = features.IsPortal
-	var revisions []DBRevision
-	if err := D.db.Order("date").Find(&revisions, "device = ?", revision.Device).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			if !features.AllowNew {
-				return ErrNewDeviceDisabled
+	return D.db.Transaction(func(tx *gorm.DB) error {
+		var revisions []DBRevision
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Order("date desc").Find(&revisions, "device = ?", revision.Device).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				if !features.AllowNew {
+					return ErrNewDeviceDisabled
+				}
+			} else {
+				return err
 			}
-		} else {
-			return err
 		}
-	}
-	// TODO: limit saved revisions
-	if len(revisions) > features.MaxBackups {
-		
-	}
-	if !features.AllowNew {
-		if err := D.db.First(&DBRevision{}, "device = ?", revision.Device).Error; err != nil {
-			return ErrNewDeviceDisabled
+		if len(revisions) >= features.MaxBackups {
+			toDelete := len(revisions) - features.MaxBackups + 1
+			revisionsToDelete := make([]string, toDelete)
+			for i := len(revisions) - 1; i >= features.MaxBackups-1; i-- {
+				revisionsToDelete = append(revisionsToDelete, revisions[i].Revision)
+			}
+			logger.WithFields(logrus.Fields{
+				"revisions":           len(revisions),
+				"max":                 features.MaxBackups,
+				"to_delete":           toDelete,
+				"to_delete_revisions": revisionsToDelete,
+			}).Tracef("Cleaning database")
+			if err := tx.Delete(&DBRevision{}, "device = ? AND revision IN ?", revision.Device, revisionsToDelete).Error; err != nil {
+				logger.Errorf("Cannot delete extraneous records: %s", err)
+			}
 		}
-	}
-	return D.db.Clauses(clause.OnConflict{DoNothing: true}).Create(&DBRevision{
-		Revision:   revision.Revision,
-		Hash:       revision.Hash,
-		Content:    revision.Content,
-		Reason:     revision.Reason,
-		Device:     revision.Device,
-		Username:   revision.Username,
-		Comment:    revision.Comment,
-		Date:       revision.Date,
-		FromPortal: revision.FromPortal,
-	}).Error
+		return tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&DBRevision{
+			Revision:   revision.Revision,
+			Hash:       revision.Hash,
+			Content:    revision.Content,
+			Reason:     revision.Reason,
+			Device:     revision.Device,
+			Username:   revision.Username,
+			Comment:    revision.Comment,
+			Date:       revision.Date,
+			FromPortal: revision.FromPortal,
+		}).Error
+	})
+
 }
 
 func NewDBStore(dbConfig *db.Configuration, logger *logrus.Entry) (*DBStore, error) {
@@ -140,10 +157,10 @@ func NewDBStore(dbConfig *db.Configuration, logger *logrus.Entry) (*DBStore, err
 	if err := dbConfig.Check(); err != nil {
 		return nil, err
 	}
-	db, err := dbConfig.Open()
+	database, err := dbConfig.Open()
 	if err != nil {
 		return nil, err
 	}
-	_ = db.AutoMigrate(&DBRevision{})
-	return &DBStore{db: db.Model(&DBRevision{}), log: logger}, nil
+	_ = database.AutoMigrate(&DBRevision{})
+	return &DBStore{db: database.Model(&DBRevision{}), log: logger}, nil
 }
