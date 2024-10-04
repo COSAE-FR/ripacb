@@ -15,6 +15,7 @@ type Progress struct {
 	progress chan int
 }
 
+// Init initialize the progress bar
 // full is the maximum amount of value can be sent to channel
 // limit is the progress bar size
 func (p *Progress) Init(full int, limit int) chan int {

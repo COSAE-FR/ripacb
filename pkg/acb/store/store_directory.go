@@ -9,7 +9,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -43,7 +42,7 @@ func (d *DirectoryStore) GetRevisionsForDevice(device string, features config.Fe
 			logger.Tracef("Invalid file: %s", path)
 			return nil
 		}
-		content, err := ioutil.ReadFile(path)
+		content, err := os.ReadFile(path)
 		if err != nil {
 			logger.Errorf("Cannot read %s", err)
 			return nil
@@ -120,7 +119,7 @@ func (d *DirectoryStore) SetRevision(revision *entity.Revision, features config.
 		return err
 	}
 	backupPath := filepath.Join(devicePath, fmt.Sprintf("%s.json", revision.Revision))
-	if err := ioutil.WriteFile(backupPath, content, 0640); err != nil {
+	if err := os.WriteFile(backupPath, content, 0640); err != nil {
 		return err
 	}
 	return nil

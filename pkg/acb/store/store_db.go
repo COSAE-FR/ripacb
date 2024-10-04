@@ -27,7 +27,7 @@ type DBRevision struct {
 	FromPortal bool
 }
 
-func (DBRevision) TableName() string {
+func (*DBRevision) TableName() string {
 	return "acbd_revision"
 }
 

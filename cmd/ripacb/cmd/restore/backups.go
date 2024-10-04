@@ -9,7 +9,7 @@ import (
 	"github.com/COSAE-FR/ripacb/pkg/acb/bindings"
 	"github.com/COSAE-FR/ripacb/pkg/acb/entity"
 	"github.com/rivo/tview"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -69,7 +69,7 @@ func GetBackups(server, hostname, password string) (*entity.RevisionList, error)
 		defer post.Body.Close()
 	}
 	if post.StatusCode == http.StatusOK {
-		raw, err := ioutil.ReadAll(post.Body)
+		raw, err := io.ReadAll(post.Body)
 		if err != nil {
 			return nil, err
 		}

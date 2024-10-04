@@ -7,7 +7,7 @@ import (
 	"github.com/COSAE-FR/ripacb/pkg/acb/bindings"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 )
@@ -50,7 +50,7 @@ func CheckServer() (*bindings.StatusResponse, error) {
 	if resp.Body != nil {
 		defer resp.Body.Close()
 	}
-	body, readErr := ioutil.ReadAll(resp.Body)
+	body, readErr := io.ReadAll(resp.Body)
 	if readErr != nil {
 		return nil, err
 	}

@@ -11,7 +11,7 @@ import (
 	"github.com/COSAE-FR/ripacb/pkg/acb/entity"
 	"github.com/COSAE-FR/riputils/common"
 	"github.com/Luzifer/go-openssl/v4"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"regexp"
@@ -54,7 +54,7 @@ func restoreBackup(id string, progress chan int) error {
 	}
 	progress <- 1
 	var revision entity.Revision
-	raw, err := ioutil.ReadAll(post.Body)
+	raw, err := io.ReadAll(post.Body)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func restoreBackup(id string, progress chan int) error {
 		return fmt.Errorf("cleartext data seems invalid")
 	}
 	progress <- 1
-	input, err := ioutil.ReadFile(cliconfig.PfSenseXML)
+	input, err := os.ReadFile(cliconfig.PfSenseXML)
 	if err != nil {
 		return fmt.Errorf("cannot read old configuration file at %s", cliconfig.PfSenseXML)
 	}
@@ -90,9 +90,9 @@ func restoreBackup(id string, progress chan int) error {
 	if err == nil {
 		dec = patched
 	}
-	err = ioutil.WriteFile(cliconfig.PfSenseXML, dec, 0644)
+	err = os.WriteFile(cliconfig.PfSenseXML, dec, 0644)
 	if err != nil {
-		_ = ioutil.WriteFile(cliconfig.PfSenseXML, input, 0644)
+		_ = os.WriteFile(cliconfig.PfSenseXML, input, 0644)
 		return err
 	}
 	if common.FileExists("/conf/trigger_initial_wizard") {

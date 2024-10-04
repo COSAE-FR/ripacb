@@ -5,12 +5,6 @@ import (
 	"mime/multipart"
 )
 
-/*
-"userkey=" . $userkey .
-		"&revision=" . urlencode($_REQUEST['newver']) .
-		"&version=" . $g['product_version'] .
-		"&uid=" . urlencode($uniqueID));
-*/
 type GetBackupRequest struct {
 	Uid       string `form:"uid"`
 	Version   string `form:"version"`
@@ -25,17 +19,6 @@ type StatusResponse struct {
 	Features *config.Features `json:"features,omitempty"`
 }
 
-//
-// $post_fields = array(
-//				'reason' => htmlspecialchars($reason),
-//				'uid' => $uniqueID,
-//				'file' => curl_file_create($tmpname, 'image/jpg', 'config.jpg'),
-//				'userkey' => htmlspecialchars($userkey),
-//				'sha256_hash' => $raw_config_sha256_hash,
-//				'version' => $g['product_version'],
-//				'hint' => $config['system']['acb']['hint'],
-//				'manmax' => $manmax
-//			);
 type SaveBackupRequest struct {
 	Uid       string                `form:"uid"`
 	Version   string                `form:"version"`

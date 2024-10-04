@@ -7,13 +7,13 @@ import (
 	"github.com/COSAE-FR/riputils/svc/shared"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
+	"os"
 )
 
 func ConfigParser(logger *log.Entry, config shared.Config) (svc.Daemonizer, error) {
 	log.SetLevel(log.InfoLevel)
 	cfg := &acb.ServiceConfig{}
-	file, err := ioutil.ReadFile(config.Conf)
+	file, err := os.ReadFile(config.Conf)
 	if err != nil {
 		return nil, err
 	}

@@ -78,17 +78,6 @@ func (s *Server) Ping(c *gin.Context) {
 	})
 }
 
-//
-// $post_fields = array(
-//				'reason' => htmlspecialchars($reason),
-//				'uid' => $uniqueID,
-//				'file' => curl_file_create($tmpname, 'image/jpg', 'config.jpg'),
-//				'userkey' => htmlspecialchars($userkey),
-//				'sha256_hash' => $raw_config_sha256_hash,
-//				'version' => $g['product_version'],
-//				'hint' => $config['system']['acb']['hint'],
-//				'manmax' => $manmax
-//			);
 func (s *Server) SaveBackupHandler(c *gin.Context) {
 	if !s.config.Features.AllowSave {
 		s.log.Info("save disabled")

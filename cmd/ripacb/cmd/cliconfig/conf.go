@@ -5,7 +5,6 @@ import (
 	"github.com/COSAE-FR/riputils/common"
 	"github.com/COSAE-FR/riputils/pfsense/configuration"
 	"github.com/go-playground/validator/v10"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"time"
@@ -51,7 +50,7 @@ func getDefaultServerURL() string {
 		}
 	}
 	if common.FileExists(PfSenseGlobalsFile) {
-		globals, err := ioutil.ReadFile(PfSenseGlobalsFile)
+		globals, err := os.ReadFile(PfSenseGlobalsFile)
 		if err == nil {
 			r, err := regexp.Compile(`"default_acb_server"\s*=>\s*"(http[^"]+)"`)
 			if err == nil {
@@ -91,7 +90,7 @@ func getDefaultHostname() string {
 
 func readPfSenseConfiguration() {
 	if common.FileExists(PfSenseXML) {
-		data, err := ioutil.ReadFile(PfSenseXML)
+		data, err := os.ReadFile(PfSenseXML)
 		if err != nil {
 			return
 		}
