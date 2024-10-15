@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-const DefaultPfSenseXML = "/conf/config.xml"
 const PfSenseGlobalsFile = "/etc/inc/globals.inc"
 
 var PfSenseXML = DefaultPfSenseXML
