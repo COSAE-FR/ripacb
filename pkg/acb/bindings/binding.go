@@ -3,6 +3,7 @@ package bindings
 import (
 	"github.com/COSAE-FR/ripacb/pkg/acb/config"
 	"mime/multipart"
+	"time"
 )
 
 type GetBackupRequest struct {
@@ -28,4 +29,5 @@ type SaveBackupRequest struct {
 	Hash      string                `form:"sha256_hash"`
 	Hint      string                `form:"hint"`
 	ManualMax int                   `form:"manmax"`
+	Date      *time.Time            `form:"date"`
 }

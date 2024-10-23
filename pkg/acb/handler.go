@@ -127,6 +127,9 @@ func (s *Server) SaveBackupHandler(c *gin.Context) {
 		FromPortal: false,
 		Device:     request.DeviceKey,
 	}
+	if s.config.Features.IsPortal && request.Date != nil {
+		backup.Date = *request.Date
+	}
 	backup.Revision = backup.Date.UTC().Format(time.RFC3339)
 	validate := validator.New()
 	if err := validate.Struct(backup); err != nil {
